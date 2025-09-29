@@ -1,0 +1,52 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg-info/
+.eggs/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Django runtime & build artifacts
+backend/media/*
+!backend/media/.gitkeep
+
+# Place only source-controlled assets in backend/static.
+# Anything produced by collectstatic should NOT be committed.
+backend/static/*
+!backend/static/.gitkeep
+
+# DB & dumps
+*.sqlite3
+*.db
+*.sql
+
+# Tool caches / reports
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.log
+
+# Local env/secrets
+.env
+.env.*
+
+# --- Node / Vite (frontend) ---
+node_modules/
+dist/
+.vite/
+*.local
+*.cache
+
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
