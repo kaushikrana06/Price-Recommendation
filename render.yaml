@@ -15,7 +15,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: "*"      # tighten later
+        value: "*"           # tighten later
       - key: DATABASE_URL
         fromDatabase:
           name: pricing-intel-db
@@ -25,7 +25,6 @@ services:
           name: pricing-intel-redis
           type: redis
           property: connectionString
-      # If your Celery uses these names:
       - key: CELERY_BROKER_URL
         fromService:
           name: pricing-intel-redis
@@ -36,12 +35,14 @@ services:
           name: pricing-intel-redis
           type: redis
           property: connectionString
-    # Run migrations + collectstatic after each deploy
+      # Uncomment if using the LLM endpoint
+      # - key: OPENAI_API_KEY
+      #   sync: false
     postDeployCommand: >
       python manage.py migrate &&
       python manage.py collectstatic --noinput
 
-  # ---- Celery worker (same image, different start command) ----
+  # ---- Celery worker ----
   - type: worker
     name: pricing-intel-celery
     env: docker
@@ -53,7 +54,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings
       - key: SECRET_KEY
-        sync: false   # it will inherit same value if present, or set again manually
+        sync: false
       - key: DEBUG
         value: "False"
       - key: DATABASE_URL
@@ -75,17 +76,32 @@ services:
           name: pricing-intel-redis
           type: redis
           property: connectionString
+      # - key: OPENAI_API_KEY
+      #   sync: false
 
-  # ---- Static frontend (Vite build -> dist) ----
-  - type: static
+  # ---- Static frontend (Vite → dist) ----
+  - type: static_site
     name: pricing-intel-web
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
     envVars:
-      # You will fill this AFTER the API URL is known (step 3)
+      # Option A (direct calls): set this to your API URL after first deploy
+      # - key: VITE_API_BASE
+      #   value: https://pricing-intel-api.onrender.com/api
+      #
+      # Option B (same-origin via proxy rule below):
       - key: VITE_API_BASE
-        value: https://REPLACE_WITH_API_DOMAIN/api
+        value: /api
+    routes:
+      # Proxy API calls from the static site to the API service (same-origin feel)
+      - type: rewrite
+        source: /api/*
+        destination: https://pricing-intel-api.onrender.com/api/:splat
+      # SPA fallback for React Router
+      - type: rewrite
+        source: /.*
+        destination: /index.html
 
   # ---- Redis (managed) ----
   - type: redis
